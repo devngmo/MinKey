@@ -1,5 +1,6 @@
 import os, sys
 from fastapi import FastAPI, Body
+from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -42,7 +43,8 @@ def deleteAll():
 
 @app.get("/string/{key}")
 def getString(key:str):
-    return keyStore.getString(key)
+    value = keyStore.getString(key)
+    return PlainTextResponse(value)
 
 @app.post("/string/{key}")
 def setString(key:str, value:str=Body(media_type='plain/text')):
