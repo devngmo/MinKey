@@ -1,1 +1,1 @@
-python -m uvicorn main:app --port 13722 --host localhost
+python -m uvicorn main:app --port 24500 --host localhost

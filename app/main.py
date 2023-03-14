@@ -35,7 +35,16 @@ keyStore.load(os.getcwd())
 
 @app.get("/")
 def welcome():
-    return f'welcome to MinKey version {global_variables.version_name}'
+    content = [
+    '======= API ===========',
+    'Add Value: /string/{key}  with plain/text body',
+    'Get Value: /string/{key}',
+    '======= Content ===========',
+    ]
+    dataMap = keyStore.getAll()
+    for key in dataMap.keys():
+        content += [f"{key}={dataMap[key]}"]
+    return content
 
 @app.delete("/keys")
 def deleteAll():

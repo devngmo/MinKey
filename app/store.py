@@ -31,3 +31,6 @@ class KeyStore:
     def save(self):
         fp = os.path.join(self.dataFolder, 'store.yml')
         utils.writeYaml(self.store, fp)
+
+    def getAll(self):
+        return self.store
