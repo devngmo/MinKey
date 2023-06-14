@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, json
 from fastapi import FastAPI, Body
 from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -59,4 +59,12 @@ def getString(key:str):
 def setString(key:str, value:str=Body(media_type='plain/text')):
     return keyStore.setString(key, value)
 
+@app.get("/json/{key}")
+def getJson(key:str):
+    value = keyStore.getString(key)
+    return json.loads(value)
+
+@app.post("/json/{key}")
+def setJson(key:str, value:dict=Body()):
+    return keyStore.setString(key, json.dumps(value))
 
