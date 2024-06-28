@@ -1,5 +1,5 @@
-import os, sys, json
-from fastapi import FastAPI, Body
+import os, sys, json, yaml
+from fastapi import FastAPI, Body, HTTPException
 from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -33,6 +33,10 @@ from store import KeyStore
 keyStore = KeyStore()
 keyStore.load(os.getcwd())
 
+from list_mgr import ListManager
+listMgr = ListManager()
+listMgr.load()
+
 @app.get("/")
 def welcome():
     content = [
@@ -61,10 +65,39 @@ def setString(key:str, value:str=Body(media_type='plain/text')):
 
 @app.get("/json/{key}")
 def getJson(key:str):
+    print(f"[GET JSON] {key}...")
     value = keyStore.getString(key)
+    print(value)
     return json.loads(value)
 
 @app.post("/json/{key}")
 def setJson(key:str, value:dict=Body()):
+    print(f"[SET JSON] {key}...")
     return keyStore.setString(key, json.dumps(value))
 
+@app.get("/list/{listId}/{index}")
+def list_get_item(listId:str, index: int):
+    item = listMgr.getAt(listId, index)
+    if item == None:
+        raise HTTPException(status_code=404, detail='List is empty')
+    return item
+
+
+@app.post("/list/string/{listId}")
+def list_append_string_item(listId:str, content: str = Body(media_type='text/plain')) -> str:
+    print(f'LIST [{listId}] append')
+    print(content)
+    listMgr.append(listId, content)
+    return PlainTextResponse('ok')
+
+@app.post("/list/dict/{listId}")
+def list_append_dict_item(listId:str, content: dict = Body()) -> str:
+    print(f'LIST [{listId}] append')
+    print(content)
+    listMgr.append(listId, content)
+    return PlainTextResponse('ok')
+
+@app.delete('/list/{listId}/{index}')
+def list_remove_item_at(listId: str, index: int):
+    print(f"LIST [{listId}] remove at {index}...")
+    listMgr.removeAt(listId, index)

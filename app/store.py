@@ -11,10 +11,19 @@ class KeyStore:
         fp = os.path.join(folder, 'store.yml')
         if os.path.exists(fp):
             self.store = utils.loadYaml(fp)
+            print(f"Store loaded {len(self.store)} keys")
+            for key in self.store.keys():
+                print(key)
+        else:
+            print(f"Store file not found: {fp}")
     
     def getString(self, key):
         if key in self.store:
             return self.store[key]
+        else:
+            print(f"key [{key}] not found in store")
+            for k in self.store.keys():
+                print(f"{k} <> {key} {k == key}")
         return None
         
     def deleteAll(self):
@@ -34,3 +43,4 @@ class KeyStore:
 
     def getAll(self):
         return self.store
+    
