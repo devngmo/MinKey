@@ -107,7 +107,3 @@ def writeText(fp, text):
     with open(fp, 'w', encoding='utf8') as f:
         f.write(text)
         f.close()
-
-regexEmailAddress = '^[a-z0-9]+[\._]?[a-z0-9]+[@]\w+[.]\w{2,3}$' 
-def isValidEmailAddress(text):
-    return re.search(regexEmailAddress, text)        

@@ -1,5 +1,5 @@
 import os, sys, json, yaml
-from fastapi import FastAPI, Body, HTTPException
+from fastapi import FastAPI, Body, HTTPException, Header
 from fastapi.responses import PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,10 +14,16 @@ ALLOW_CREDENTIALS = utils.getEnvBool('ALLOW_CREDENTIALS', False)
 ALLOW_ORIGINS = utils.getEnvValue('ALLOW_ORIGINS', '*').split(',')
 ALLOW_METHODS = utils.getEnvValue('ALLOW_METHODS', '*').split(',')
 ALLOW_HEADERS = utils.getEnvValue('ALLOW_HEADERS', '*').split(',')
-
+AUTO_SAVE = utils.getEnvBool('AUTO_SAVE', True)
+TRACE_ENABLED = utils.getEnvBool('TRACE_ENABLED', False)
+DATA_FOLDER = utils.getEnvValue('DATA_FOLDER', None)
+if DATA_FOLDER == None:
+    DATA_FOLDER = os.path.join(os.path.dirname(APP_DIR), 'data')
+    
 utils.hl('------------------------------------')
 utils.hl(f'  MinKey.API ver. {global_variables.version_name}')
 utils.hl(f'  Build date {global_variables.build_date} Build number: {global_variables.build_number}')
+utils.hl(f'  Storage Folder: {DATA_FOLDER}')
 utils.hl('------------------------------------')
 
 app = FastAPI(openapi_tags=apidefs.tags_metadata, title='MinKey', version=global_variables.version_name)
@@ -30,8 +36,8 @@ app.add_middleware(
 )
 
 from store import KeyStore
-keyStore = KeyStore()
-keyStore.load(os.getcwd())
+keyStore = KeyStore(autoSave=AUTO_SAVE, traceEnabled=TRACE_ENABLED)
+keyStore.load(DATA_FOLDER)
 
 from list_mgr import ListManager
 listMgr = ListManager()
@@ -45,34 +51,39 @@ def welcome():
     'Get Value: /string/{key}',
     '======= Content ===========',
     ]
-    dataMap = keyStore.getAll()
-    for key in dataMap.keys():
-        content += [f"{key}={dataMap[key]}"]
+    for key in keyStore.store.keys():
+        m = keyStore.store[key]
+        content += [f"{key}: {len(m)} items"]
     return content
 
 @app.delete("/keys")
 def deleteAll():
     return keyStore.deleteAll()
 
-@app.get("/string/{key}")
-def getString(key:str):
+@app.get("/string")
+def getString(key:str = Header()):
     value = keyStore.getString(key)
     return PlainTextResponse(value)
 
-@app.post("/string/{key}")
-def setString(key:str, value:str=Body(media_type='plain/text')):
+@app.post("/string")
+def setString(key:str = Header(), value:str=Body(media_type='plain/text')):
     return keyStore.setString(key, value)
 
-@app.get("/json/{key}")
-def getJson(key:str):
-    print(f"[GET JSON] {key}...")
+@app.get("/json")
+def getJson(key:str = Header()):
+    if TRACE_ENABLED:
+        print(f"[GET JSON] {key}...")
     value = keyStore.getString(key)
-    print(value)
+    if TRACE_ENABLED:
+        print(value)
+    if value == None:
+        raise HTTPException(status_code=404, detail=f'Key not found: {key}')
     return json.loads(value)
 
-@app.post("/json/{key}")
-def setJson(key:str, value:dict=Body()):
-    print(f"[SET JSON] {key}...")
+@app.post("/json")
+def setJson(key:str = Header(), value:dict=Body()):
+    if TRACE_ENABLED:
+        print(f"[SET JSON] {key}...")
     return keyStore.setString(key, json.dumps(value))
 
 @app.get("/list/{listId}/{index}")
